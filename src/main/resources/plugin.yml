@@ -1,0 +1,9 @@
+name: SwitzerlandMC
+version: 1.0.0
+main: io.github.flopsey.switzerlandmc.SwitzerlandMC
+api-version: 1.18
+load: STARTUP
+commands:
+  alti:
+    description: Get the altitude at the player's position
+    usage: /alti
