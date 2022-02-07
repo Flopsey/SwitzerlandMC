@@ -15,6 +15,13 @@ public class SwitzerlandChunkGenerator extends ChunkGenerator {
         this.heightDataProvider = heightDataProvider;
     }
 
+    static int minecraftHeight(@NotNull WorldInfo worldInfo, float height) {
+        if (Float.isNaN(height)) {
+            return worldInfo.getMinHeight() - 1;
+        }
+        return Math.round(height - 500);
+    }
+
     @Override
     public void generateSurface(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
         for (int localX = 0; localX < 16; ++localX) {
@@ -24,12 +31,5 @@ public class SwitzerlandChunkGenerator extends ChunkGenerator {
                 chunkData.setBlock(localX, y, localZ, Material.GRASS_BLOCK);
             }
         }
-    }
-
-    static int minecraftHeight(@NotNull WorldInfo worldInfo, float height) {
-        if (Float.isNaN(height)) {
-            return worldInfo.getMinHeight() - 1;
-        }
-        return Math.round(height - 500);
     }
 }
