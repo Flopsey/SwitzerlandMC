@@ -17,9 +17,11 @@ public class XYZHeightDataProvider implements HeightDataProvider {
     private final ConcurrentMap<Coordinates.MapCoords, HeightMapTile> cache = new ConcurrentHashMap<>();
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private final JavaPlugin plugin;
+    private final String resourceName;
 
-    public XYZHeightDataProvider(JavaPlugin plugin) {
+    public XYZHeightDataProvider(JavaPlugin plugin, String resourceName) {
         this.plugin = plugin;
+        this.resourceName = resourceName;
     }
 
     @Override
@@ -58,7 +60,7 @@ public class XYZHeightDataProvider implements HeightDataProvider {
         HeightMapTile tile = new HeightMapTile(tileCoords.x() * TILE_SIZE, tileCoords.x() * TILE_SIZE + TILE_SIZE, tileCoords.y() * TILE_SIZE, tileCoords.y() * TILE_SIZE + TILE_SIZE);
         float[][] cumulatedHeightValues = new float[TILE_SIZE][TILE_SIZE];
         short[][] heightValueCount = new short[TILE_SIZE][TILE_SIZE];
-        try (Scanner scanner = new Scanner(Objects.requireNonNull(plugin.getResource("SWISSALTI3D_0.5_XYZ_CHLV95_LN02_%d_%d.xyz".formatted(tileCoords.x(), tileCoords.y()))))) {
+        try (Scanner scanner = new Scanner(Objects.requireNonNull(plugin.getResource(resourceName.formatted(tileCoords.x(), tileCoords.y()))))) {
             scanner.nextLine();  // Header line
             while (scanner.hasNextFloat()) {
                 int x = (int) scanner.nextFloat() - tileCoords.x() * TILE_SIZE;
