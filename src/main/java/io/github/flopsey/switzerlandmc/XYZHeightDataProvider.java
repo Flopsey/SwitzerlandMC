@@ -2,9 +2,13 @@ package io.github.flopsey.switzerlandmc;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -60,21 +64,30 @@ public class XYZHeightDataProvider implements HeightDataProvider {
         HeightMapTile tile = new HeightMapTile(tileCoords.x() * TILE_SIZE, tileCoords.x() * TILE_SIZE + TILE_SIZE, tileCoords.y() * TILE_SIZE, tileCoords.y() * TILE_SIZE + TILE_SIZE);
         float[][] cumulatedHeightValues = new float[TILE_SIZE][TILE_SIZE];
         short[][] heightValueCount = new short[TILE_SIZE][TILE_SIZE];
-        try (Scanner scanner = new Scanner(Objects.requireNonNull(plugin.getResource(resourceName.formatted(tileCoords.x(), tileCoords.y()))))) {
-            scanner.nextLine();  // Header line
-            while (scanner.hasNextFloat()) {
-                int x = (int) scanner.nextFloat() - tileCoords.x() * TILE_SIZE;
-                int y = (int) scanner.nextFloat() - tileCoords.y() * TILE_SIZE;
-                cumulatedHeightValues[x][y] += scanner.nextFloat();
+        try {
+            String file = resourceName.formatted(tileCoords.x(), tileCoords.y());
+            InputStream xyzData = plugin.getResource(file);
+            if (xyzData == null) {
+                throw new NoSuchFileException(file);
+            }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(xyzData));
+            String line;
+            reader.readLine();  // Header line
+            while ((line = reader.readLine()) != null) {
+                StringTokenizer tokenizer = new StringTokenizer(line);
+                int x = (int) Float.parseFloat(tokenizer.nextToken()) - tileCoords.x() * TILE_SIZE;
+                int y = (int) Float.parseFloat(tokenizer.nextToken()) - tileCoords.y() * TILE_SIZE;
+                cumulatedHeightValues[x][y] += Float.parseFloat(tokenizer.nextToken());
                 ++heightValueCount[x][y];
             }
-            for (int x = 0; x < TILE_SIZE; ++x) {
-                for (int y = 0; y < TILE_SIZE; ++y) {
-                    tile.setHeight(new Coordinates.MapCoords(TILE_SIZE * tileCoords.x() + x, TILE_SIZE * tileCoords.y() + y), cumulatedHeightValues[x][y] / heightValueCount[x][y]);
-                }
-            }
-        } catch (NullPointerException e) {
+        } catch (IOException e) {
             Arrays.fill(tile.heightData, Float.NaN);
+            return tile;
+        }
+        for (int x = 0; x < TILE_SIZE; ++x) {
+            for (int y = 0; y < TILE_SIZE; ++y) {
+                tile.setHeight(new Coordinates.MapCoords(TILE_SIZE * tileCoords.x() + x, TILE_SIZE * tileCoords.y() + y), cumulatedHeightValues[x][y] / heightValueCount[x][y]);
+            }
         }
         return tile;
     }
